@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="煩悩ログ">
+<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%232a78d6'/%3E%3Ccircle cx='90' cy='90' r='46' fill='none' stroke='white' stroke-width='10'/%3E%3C/svg%3E">
+<title>煩悩ログ</title>
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#f6f5f1; --surface:#fcfcfb; --surface-2:#f0efea; --border:#dcdad3;
+    --text:#0b0b0b; --text-2:#52514e; --muted:#86847d;
+    --accent:#2a78d6; --ton:#2a78d6; --jin:#eb6834; --chi:#1baf7a; --grid:#e6e4de;
+    --ok:#008300; --warn:#c98500; --bad:#e34948;
+    --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ color-scheme: dark;
+      --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+      --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8d84;
+      --accent:#3987e5; --ton:#3987e5; --jin:#d95926; --chi:#199e70; --grid:#2c2b28;
+      --ok:#3cb043; --warn:#eda100; --bad:#e66767; }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;line-height:1.5;font-size:16px}
+  /* top bar */
+  .top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:calc(var(--sat) + 8px) 16px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .top h1{font-size:17px;margin:0;font-weight:600}
+  .sync{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)}
+  .sync .st{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+  .sync .st.ok{background:var(--ok)} .sync .st.warn{background:var(--warn)} .sync .st.bad{background:var(--bad)} .sync .st.busy{background:var(--accent);animation:p 1s infinite}
+  @keyframes p{50%{opacity:.3}}
+  .sync button{padding:5px 10px;font-size:12px}
+  main{padding:0 14px calc(var(--sab) + 92px)}
+  section.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin:12px 0}
+  section.card h2{font-size:16px;margin:0 0 2px;display:flex;align-items:center;gap:8px}
+  section.card h2 .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  section.card .sub{color:var(--muted);font-size:12px;margin:0 0 10px}
+  label{display:block;font-size:13px;color:var(--text-2);margin:12px 0 4px}
+  textarea,input[type=text],input[type=password],input[type=datetime-local]{width:100%;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px;font:inherit;font-size:16px;resize:vertical;-webkit-appearance:none;appearance:none}
+  textarea{min-height:76px}
+  textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+  .level{display:flex;align-items:center;gap:12px;margin:6px 0 2px}
+  .level input[type=range]{flex:1;accent-color:var(--accent);height:34px}
+  .level output{min-width:2em;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:22px}
+  .scale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+  .check{display:flex;align-items:center;gap:10px;margin:12px 0 0;font-size:15px;cursor:pointer;min-height:34px}
+  .check input{width:22px;height:22px;accent-color:var(--accent)}
+  .hidden{display:none !important}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  button{font:inherit;font-size:15px;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer;min-height:44px}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.danger{color:var(--bad)}
+  button.sm{min-height:36px;padding:7px 12px;font-size:13px}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.5}
+  /* bottom save bar */
+  .savebar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:10px 14px calc(var(--sab) + 10px);background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;gap:8px}
+  .savebar button{flex:1;min-height:48px;font-size:16px}
+  .toast{position:fixed;left:50%;bottom:calc(var(--sab) + 84px);transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
+  .toast.show{opacity:1}
+  /* chart */
+  .chartwrap{position:relative}
+  svg.chart{width:100%;height:auto;display:block;font-family:inherit}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--text-2);margin:4px 0 8px}
+  .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:var(--c)}
+  .tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);display:none;min-width:140px;z-index:2}
+  .tip b{display:block;margin-bottom:4px}
+  .tip .r{display:flex;justify-content:space-between;gap:12px}
+  .tip .r i{font-style:normal;color:var(--text-2)}
+  .tabs{display:flex;gap:6px;margin-bottom:6px}
+  .tabs button{flex:1}
+  .tabs button[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+  /* history */
+  .entry{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--surface-2)}
+  .entry .head{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;min-height:30px}
+  .entry .head .d{font-size:14px;color:var(--text-2)}
+  .entry .lv{display:flex;gap:10px;font-size:13px;font-variant-numeric:tabular-nums}
+  .entry .lv span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;background:var(--c)}
+  .entry .body{display:none;margin-top:10px;font-size:14px;white-space:pre-wrap;color:var(--text-2);border-top:1px solid var(--border);padding-top:8px}
+  .entry.open .body{display:block}
+  .entry .actions{display:none;gap:6px;margin-top:8px}
+  .entry.open .actions{display:flex}
+  pre.md{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;max-height:300px;overflow:auto;margin:10px 0 0;-webkit-user-select:text;user-select:text}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:16px}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .banner{background:var(--accent);color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;display:none;margin:12px 0 0;justify-content:space-between;align-items:center}
+  .banner.show{display:flex}
+  .banner button{background:rgba(255,255,255,.2);border-color:transparent;color:#fff}
+  details summary{cursor:pointer;color:var(--text-2);font-size:14px;padding:6px 0}
+  .kv{font-size:13px;color:var(--text-2)} .kv code{font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>煩悩ログ</h1>
+  <div class="sync"><span class="st" id="syncDot"></span><span id="syncText">未設定</span><button type="button" class="sm" id="syncBtn">同期</button></div>
+</div>
+<main>
+
+<div class="banner" id="editBanner"><span>過去の記録を編集中</span><button type="button" class="sm" id="cancelEdit">やめる</button></div>
+
+<form id="form" autocomplete="off">
+<section class="card">
+  <h2>記録日時</h2>
+  <input type="datetime-local" id="ts">
+</section>
+
+<section class="card">
+  <h2><span class="dot" style="background:var(--ton)"></span>貪 — 欲・執着</h2>
+  <p class="sub">欲しい・離したくない・もっと、という引力。</p>
+  <div class="level"><input type="range" id="tonLevel" min="0" max="10" value="0"><output id="tonOut">0</output></div>
+  <div class="scale"><span>0 静か</span><span>5</span><span>10 支配されている</span></div>
+  <label class="check"><input type="checkbox" id="tonAttach"> 執着がある</label>
+  <div id="tonAttachBox" class="hidden">
+    <label for="tonAttachText">何に執着しているか・その中身</label>
+    <textarea id="tonAttachText" placeholder="対象／手放せない理由／失うと何が起きると思っているか"></textarea>
+  </div>
+  <label for="tonNote">メモ（任意）</label>
+  <textarea id="tonNote" placeholder="きっかけ、身体感覚、思考のループなど"></textarea>
+</section>
+
+<section class="card">
+  <h2><span class="dot" style="background:var(--jin)"></span>瞋 — 怒り・悲しみ</h2>
+  <p class="sub">嫌だ・拒みたい・押し返したい、という斥力。</p>
+  <div class="level"><input type="range" id="jinLevel" min="0" max="10" value="0"><output id="jinOut">0</output></div>
+  <div class="scale"><span>0 静か</span><span>5</span><span>10 支配されている</span></div>
+  <label for="jinAnger">怒り</label><textarea id="jinAnger" placeholder="誰に／何に／どんな期待が裏切られたか"></textarea>
+  <label for="jinSad">悲しみ</label><textarea id="jinSad" placeholder="何を失った・失いそうと感じているか"></textarea>
+</section>
+
+<section class="card">
+  <h2><span class="dot" style="background:var(--chi)"></span>痴 — 無明・思い込み</h2>
+  <p class="sub">事実と解釈の混同、「こうに決まっている」という固定観念。</p>
+  <div class="level"><input type="range" id="chiLevel" min="0" max="10" value="0"><output id="chiOut">0</output></div>
+  <div class="scale"><span>0 明晰</span><span>5</span><span>10 霧の中</span></div>
+  <label for="chiNote">どんな思い込み・見えていないことがあるか</label>
+  <textarea id="chiNote" placeholder="事実：／解釈：／確かめていない前提："></textarea>
+</section>
+
+<section class="card">
+  <h2>アクションプラン — 四無量心</h2>
+  <p class="sub">揺れに対して、どの心でどう応えるか。</p>
+  <label for="apJi">慈 — 幸せを願う／自他への友好</label>
+  <textarea id="apJi" placeholder="相手や自分に向けてできる、具体的な一手"></textarea>
+  <label for="apHi">悲 — 苦を取り除く／共感</label>
+  <textarea id="apHi" placeholder="苦しみを減らすために、今やめること・やること"></textarea>
+  <label for="apKi">喜 — 他者の喜びを喜ぶ／嫉妬の解除</label>
+  <textarea id="apKi" placeholder="他人の良い状態をそのまま認める言葉・行動"></textarea>
+  <label for="apSha">捨 — 平静・手放し</label>
+  <textarea id="apSha" placeholder="コントロールできないものを手放す宣言、距離の取り方"></textarea>
+  <label for="memo">ふりかえり・一言（任意）</label>
+  <textarea id="memo" placeholder="書き終えたあと、揺れはどう変わったか"></textarea>
+  <div class="btnrow">
+    <button type="button" class="sm" id="copyNowBtn">この内容をMDでコピー</button>
+    <button type="button" class="sm" id="clearBtn">フォームを空にする</button>
+  </div>
+</section>
+</form>
+
+<section class="card">
+  <h2>推移</h2>
+  <p class="sub">各レベル（0–10）の時系列。点をタップで詳細。</p>
+  <div class="tabs" id="rangeTabs">
+    <button type="button" class="sm" data-n="10" aria-pressed="true">直近10件</button>
+    <button type="button" class="sm" data-n="30">直近30件</button>
+    <button type="button" class="sm" data-n="0">全部</button>
+  </div>
+  <div class="legend"><span style="--c:var(--ton)">貪</span><span style="--c:var(--jin)">瞋</span><span style="--c:var(--chi)">痴</span></div>
+  <div class="chartwrap">
+    <svg class="chart" id="chart" viewBox="0 0 372 240" role="img" aria-label="貪瞋痴レベルの推移"></svg>
+    <div class="tip" id="tip"></div>
+  </div>
+  <div id="chartEmpty" class="empty hidden">記録が2件以上たまると折れ線で表示されます。</div>
+</section>
+
+<section class="card">
+  <h2>過去の記録</h2>
+  <p class="sub">タップで展開。編集・MDコピー・削除。</p>
+  <div id="history"></div>
+</section>
+
+<section class="card">
+  <h2>AIプロンプト用に書き出す</h2>
+  <p class="sub">Markdownでコピーし、AIに貼り付けて分析・対話に使う。</p>
+  <div class="btnrow">
+    <button type="button" class="sm" id="mdAllBtn">全履歴をMDでコピー</button>
+    <button type="button" class="sm" id="mdRecentBtn">直近7件</button>
+    <button type="button" class="sm" id="mdPreviewBtn">プレビュー</button>
+  </div>
+  <pre class="md hidden" id="mdPreview"></pre>
+</section>
+
+<section class="card">
+  <h2>GitHub 同期設定</h2>
+  <p class="sub">データは指定したプライベートリポジトリの JSON に保存されます。トークンはこの端末のブラウザ内にのみ保持。</p>
+  <details id="cfgDetails">
+    <summary id="cfgSummary">設定を開く</summary>
+    <label for="cfgRepo">データリポジトリ（owner/repo）</label>
+    <input type="text" id="cfgRepo" placeholder="yourname/bonno-data" autocapitalize="off" autocorrect="off">
+    <label for="cfgPath">ファイルパス</label>
+    <input type="text" id="cfgPath" value="bonno.json" autocapitalize="off" autocorrect="off">
+    <label for="cfgBranch">ブランチ</label>
+    <input type="text" id="cfgBranch" value="main" autocapitalize="off" autocorrect="off">
+    <label for="cfgToken">Fine-grained PAT（Contents: Read and write、対象リポジトリのみ）</label>
+    <input type="password" id="cfgToken" placeholder="github_pat_…" autocapitalize="off" autocorrect="off">
+    <div class="btnrow">
+      <button type="button" class="sm primary" id="cfgSaveBtn">保存して接続テスト</button>
+      <button type="button" class="sm danger" id="cfgClearBtn">トークンを消去</button>
+    </div>
+    <p class="note" id="cfgStatus"></p>
+  </details>
+  <details>
+    <summary>ローカルのバックアップ（JSON）</summary>
+    <div class="btnrow">
+      <button type="button" class="sm" id="jsonCopyBtn">JSONをコピー</button>
+      <button type="button" class="sm" id="jsonImportToggle">JSONから復元</button>
+    </div>
+    <div id="jsonImportBox" class="hidden">
+      <textarea id="jsonImport" placeholder="ここにJSONを貼り付け"></textarea>
+      <div class="btnrow"><button type="button" class="sm" id="jsonImportBtn">追記して復元</button></div>
+    </div>
+  </details>
+</section>
+
+</main>
+
+<div class="savebar">
+  <button type="submit" form="form" class="primary" id="saveBtn">保存する</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  const KEY='bonno-log-v1', CFG='bonno-cfg-v1', META='bonno-meta-v1';
+  const $=id=>document.getElementById(id);
+  let entries=[]; let editingId=null; let rangeN=10;
+  let cfg={repo:'',path:'bonno.json',branch:'main',token:''};
+  let meta={sha:null,dirty:false,lastSync:0};
+
+  // ---------- storage ----------
+  const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+  function load(){ entries=ls.get(KEY,[]); if(!Array.isArray(entries)) entries=[]; cfg=Object.assign(cfg,ls.get(CFG,{})); meta=Object.assign(meta,ls.get(META,{})); sortE(); }
+  function sortE(){ entries.sort((a,b)=>a.ts-b.ts); }
+  function persistLocal(){ ls.set(KEY,entries); ls.set(META,meta); }
+
+  // ---------- helpers ----------
+  function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200); }
+  const pad=n=>String(n).padStart(2,'0');
+  function fmt(ts){ const d=new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  function toLocalInput(ts){ const d=new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  const esc=s=>(s||'').trim();
+  async function copy(text){
+    try{ await navigator.clipboard.writeText(text); toast('コピーしました'); }
+    catch(e){ $('mdPreview').textContent=text; $('mdPreview').classList.remove('hidden'); toast('コピー不可：プレビューから手動でコピーしてください'); $('mdPreview').scrollIntoView({behavior:'smooth'}); }
+  }
+  const b64enc=s=>btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+  const b64dec=b=>new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g,'')),c=>c.charCodeAt(0)));
+
+  // ---------- GitHub sync ----------
+  function setSync(state,text){ const d=$('syncDot'); d.className='st '+state; $('syncText').textContent=text; }
+  function configured(){ return cfg.repo&&cfg.token&&cfg.path; }
+  function api(method,body){
+    const url=`https://api.github.com/repos/${cfg.repo}/contents/${cfg.path.split('/').map(encodeURIComponent).join('/')}`+(method==='GET'?`?ref=${encodeURIComponent(cfg.branch)}&t=${Date.now()}`:'');
+    return fetch(url,{method,headers:{'Authorization':`Bearer ${cfg.token}`,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+  }
+  function mergeRemote(remote){
+    // id単位でマージ。updatedAtが新しい方を採用。削除は tombstone（deleted:true）で伝播。
+    const map=new Map(entries.map(e=>[e.id,e]));
+    remote.forEach(r=>{ const l=map.get(r.id); if(!l||(r.updatedAt||0)>(l.updatedAt||0)) map.set(r.id,r); });
+    entries=[...map.values()]; sortE();
+  }
+  async function pull(){
+    const res=await api('GET');
+    if(res.status===404){ meta.sha=null; return {missing:true}; }
+    if(!res.ok) throw new Error(`GET ${res.status}`);
+    const j=await res.json(); meta.sha=j.sha;
+    let remote=[]; try{ remote=JSON.parse(b64dec(j.content)); }catch(e){ throw new Error('JSON parse error'); }
+    if(!Array.isArray(remote)) remote=remote.entries||[];
+    mergeRemote(remote); return {missing:false};
+  }
+  async function push(){
+    const body={message:`bonno: ${fmt(Date.now())} (${live().length} entries)`,content:b64enc(JSON.stringify(entries,null,2)),branch:cfg.branch};
+    if(meta.sha) body.sha=meta.sha;
+    const res=await api('PUT',body);
+    if(res.status===409||res.status===422){ return false; }
+    if(!res.ok) throw new Error(`PUT ${res.status}`);
+    const j=await res.json(); meta.sha=j.content.sha; return true;
+  }
+  let syncing=false;
+  async function sync(opts={}){
+    if(!configured()){ setSync('warn','未設定（ローカル保存のみ）'); return; }
+    if(syncing) return; syncing=true; setSync('busy','同期中…');
+    try{
+      await pull();
+      if(meta.dirty||opts.force){
+        let ok=await push();
+        if(!ok){ await pull(); ok=await push(); }
+        if(!ok) throw new Error('conflict');
+      }
+      meta.dirty=false; meta.lastSync=Date.now(); persistLocal(); render();
+      setSync('ok',`同期済 ${fmt(meta.lastSync).slice(5)}`);
+    }catch(e){
+      console.error(e); persistLocal();
+      setSync('bad',navigator.onLine?`同期失敗: ${e.message}`:'オフライン（未同期あり）');
+      if(opts.loud) toast('同期に失敗しました: '+e.message);
+    }finally{ syncing=false; }
+  }
+  $('syncBtn').addEventListener('click',()=>sync({force:true,loud:true}));
+  window.addEventListener('online',()=>{ if(meta.dirty) sync(); });
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') sync(); });
+
+  // ---------- config UI ----------
+  function fillCfg(){ $('cfgRepo').value=cfg.repo||''; $('cfgPath').value=cfg.path||'bonno.json'; $('cfgBranch').value=cfg.branch||'main'; $('cfgToken').value=cfg.token||''; $('cfgSummary').textContent=configured()?`接続先: ${cfg.repo}/${cfg.path}`:'設定を開く（未設定）'; if(!configured()) $('cfgDetails').open=true; }
+  $('cfgSaveBtn').addEventListener('click',async()=>{
+    cfg={repo:esc($('cfgRepo').value),path:esc($('cfgPath').value)||'bonno.json',branch:esc($('cfgBranch').value)||'main',token:esc($('cfgToken').value)};
+    ls.set(CFG,cfg); fillCfg(); meta.sha=null;
+    $('cfgStatus').textContent='接続中…';
+    try{
+      const r=await pull();
+      if(r.missing){ $('cfgStatus').textContent='接続OK。ファイルが無いので初回保存時に作成します。'; if(entries.length) meta.dirty=true; }
+      else { $('cfgStatus').textContent=`接続OK。リモート ${live().length} 件をマージしました。`; }
+      persistLocal(); render(); if(meta.dirty) await sync(); else setSync('ok','接続OK');
+    }catch(e){ $('cfgStatus').textContent='失敗: '+e.message+'（repo名・トークン権限・ブランチを確認）'; setSync('bad','接続失敗'); }
+  });
+  $('cfgClearBtn').addEventListener('click',()=>{ cfg.token=''; ls.set(CFG,cfg); fillCfg(); setSync('warn','未設定'); toast('トークンを消去しました'); });
+
+  // ---------- form ----------
+  ['ton','jin','chi'].forEach(k=>{ const r=$(k+'Level'), o=$(k+'Out'); r.addEventListener('input',()=>o.value=r.value); });
+  $('tonAttach').addEventListener('change',e=>$('tonAttachBox').classList.toggle('hidden',!e.target.checked));
+  const live=()=>entries.filter(e=>!e.deleted);
+  function readForm(){
+    const tsv=$('ts').value; const ts=tsv?new Date(tsv).getTime():Date.now();
+    return {
+      id: editingId||(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+      ts, updatedAt:Date.now(),
+      ton:{level:+$('tonLevel').value, attach:$('tonAttach').checked, attachText:esc($('tonAttachText').value), note:esc($('tonNote').value)},
+      jin:{level:+$('jinLevel').value, anger:esc($('jinAnger').value), sad:esc($('jinSad').value)},
+      chi:{level:+$('chiLevel').value, note:esc($('chiNote').value)},
+      action:{ji:esc($('apJi').value), hi:esc($('apHi').value), ki:esc($('apKi').value), sha:esc($('apSha').value)},
+      memo:esc($('memo').value)
+    };
+  }
+  function fillForm(e){
+    $('ts').value=toLocalInput(e.ts);
+    $('tonLevel').value=e.ton.level; $('tonOut').value=e.ton.level;
+    $('tonAttach').checked=!!e.ton.attach; $('tonAttachBox').classList.toggle('hidden',!e.ton.attach);
+    $('tonAttachText').value=e.ton.attachText||''; $('tonNote').value=e.ton.note||'';
+    $('jinLevel').value=e.jin.level; $('jinOut').value=e.jin.level; $('jinAnger').value=e.jin.anger||''; $('jinSad').value=e.jin.sad||'';
+    $('chiLevel').value=e.chi.level; $('chiOut').value=e.chi.level; $('chiNote').value=e.chi.note||'';
+    $('apJi').value=e.action.ji||''; $('apHi').value=e.action.hi||''; $('apKi').value=e.action.ki||''; $('apSha').value=e.action.sha||'';
+    $('memo').value=e.memo||'';
+  }
+  function resetForm(){
+    editingId=null; $('editBanner').classList.remove('show');
+    $('form').reset(); ['ton','jin','chi'].forEach(k=>{$(k+'Level').value=0;$(k+'Out').value=0;});
+    $('tonAttachBox').classList.add('hidden'); $('ts').value=toLocalInput(Date.now());
+  }
+  $('form').addEventListener('submit',ev=>{
+    ev.preventDefault();
+    const e=readForm(); const i=entries.findIndex(x=>x.id===e.id);
+    if(i>=0) entries[i]=e; else entries.push(e);
+    sortE(); meta.dirty=true; persistLocal(); render();
+    toast(i>=0?'更新しました':'保存しました'); resetForm(); window.scrollTo({top:0,behavior:'smooth'});
+    sync();
+  });
+  $('clearBtn').addEventListener('click',resetForm);
+  $('cancelEdit').addEventListener('click',resetForm);
+  $('copyNowBtn').addEventListener('click',()=>copy(entryMD(readForm())));
+
+  // ---------- markdown ----------
+  const ind=s=>(s||'').replace(/\n/g,'\n  ');
+  function entryMD(e){
+    const L=[];
+    L.push(`## ${fmt(e.ts)}`);
+    L.push(`**レベル**: 貪 ${e.ton.level}/10 ・ 瞋 ${e.jin.level}/10 ・ 痴 ${e.chi.level}/10`,'');
+    L.push(`### 貪（欲・執着） — ${e.ton.level}/10`);
+    L.push(`- 執着: ${e.ton.attach?'あり':'なし'}`);
+    if(e.ton.attach&&e.ton.attachText) L.push(`  - 内容: ${e.ton.attachText.replace(/\n/g,'\n    ')}`);
+    if(e.ton.note) L.push(`- メモ: ${ind(e.ton.note)}`);
+    L.push('',`### 瞋（怒り・悲しみ） — ${e.jin.level}/10`);
+    L.push(`- 怒り: ${ind(e.jin.anger)||'（記載なし）'}`);
+    L.push(`- 悲しみ: ${ind(e.jin.sad)||'（記載なし）'}`);
+    L.push('',`### 痴（無明・思い込み） — ${e.chi.level}/10`);
+    L.push(`- ${ind(e.chi.note)||'（記載なし）'}`);
+    L.push('',`### アクションプラン（四無量心）`);
+    L.push(`- 慈: ${ind(e.action.ji)||'（未記入）'}`);
+    L.push(`- 悲: ${ind(e.action.hi)||'（未記入）'}`);
+    L.push(`- 喜: ${ind(e.action.ki)||'（未記入）'}`);
+    L.push(`- 捨: ${ind(e.action.sha)||'（未記入）'}`);
+    if(e.memo){ L.push('',`### ふりかえり`,e.memo); }
+    return L.join('\n');
+  }
+  function allMD(list){
+    const head=['# 煩悩ログ','',`出力日時: ${fmt(Date.now())} ／ 件数: ${list.length}`,'',
+      '以下は貪（欲・執着）・瞋（怒り・悲しみ）・痴（無明・思い込み）のレベル（0=静か〜10=支配されている）と内容、および四無量心（慈悲喜捨）に基づくアクションプランの記録です。','',
+      '| 日時 | 貪 | 瞋 | 痴 |','|---|---|---|---|',
+      ...list.map(e=>`| ${fmt(e.ts)} | ${e.ton.level} | ${e.jin.level} | ${e.chi.level} |`),'','---',''];
+    return head.join('\n')+'\n'+list.map(entryMD).join('\n\n---\n\n');
+  }
+  $('mdAllBtn').addEventListener('click',()=>{ const l=live(); if(!l.length) return toast('記録がありません'); copy(allMD(l)); });
+  $('mdRecentBtn').addEventListener('click',()=>{ const l=live(); if(!l.length) return toast('記録がありません'); copy(allMD(l.slice(-7))); });
+  $('mdPreviewBtn').addEventListener('click',()=>{ const p=$('mdPreview'); const l=live(); p.textContent=l.length?allMD(l):'（記録なし）'; p.classList.toggle('hidden'); });
+
+  // ---------- local backup ----------
+  $('jsonCopyBtn').addEventListener('click',()=>copy(JSON.stringify(live(),null,2)));
+  $('jsonImportToggle').addEventListener('click',()=>$('jsonImportBox').classList.toggle('hidden'));
+  $('jsonImportBtn').addEventListener('click',()=>{
+    let arr; try{ arr=JSON.parse($('jsonImport').value); if(!Array.isArray(arr)) throw 0; }catch(e){ return toast('JSONを解釈できません'); }
+    const ok=arr.filter(x=>x&&x.ts&&x.ton&&x.jin&&x.chi).map(x=>({updatedAt:x.ts,...x}));
+    mergeRemote(ok); meta.dirty=true; persistLocal(); render(); $('jsonImport').value=''; $('jsonImportBox').classList.add('hidden'); toast(`${ok.length}件を取り込みました`); sync();
+  });
+
+  // ---------- history ----------
+  function render(){ renderHistory(); renderChart(); }
+  function renderHistory(){
+    const h=$('history'); h.innerHTML=''; const l=live();
+    if(!l.length){ h.innerHTML='<div class="empty">まだ記録がありません。</div>'; return; }
+    [...l].reverse().forEach(e=>{
+      const d=document.createElement('div'); d.className='entry';
+      const summary=[e.ton.attach&&e.ton.attachText?`執着: ${e.ton.attachText}`:'', e.ton.note?`貪メモ: ${e.ton.note}`:'', e.jin.anger?`怒り: ${e.jin.anger}`:'', e.jin.sad?`悲しみ: ${e.jin.sad}`:'', e.chi.note?`痴: ${e.chi.note}`:'', e.action.ji?`慈: ${e.action.ji}`:'', e.action.hi?`悲: ${e.action.hi}`:'', e.action.ki?`喜: ${e.action.ki}`:'', e.action.sha?`捨: ${e.action.sha}`:'', e.memo?`ふりかえり: ${e.memo}`:''].filter(Boolean).join('\n')||'（本文なし）';
+      d.innerHTML=`<div class="head"><span class="d">${fmt(e.ts)}</span><span class="lv"><span style="--c:var(--ton)">${e.ton.level}</span><span style="--c:var(--jin)">${e.jin.level}</span><span style="--c:var(--chi)">${e.chi.level}</span></span></div>
+        <div class="body"></div>
+        <div class="actions"><button type="button" class="sm" data-a="edit">編集</button><button type="button" class="sm" data-a="md">MDコピー</button><button type="button" class="sm danger" data-a="del">削除</button></div>`;
+      d.querySelector('.body').textContent=summary;
+      d.querySelector('.head').addEventListener('click',()=>d.classList.toggle('open'));
+      d.querySelector('[data-a=edit]').addEventListener('click',()=>{ editingId=e.id; fillForm(e); $('editBanner').classList.add('show'); window.scrollTo({top:0,behavior:'smooth'}); });
+      d.querySelector('[data-a=md]').addEventListener('click',()=>copy(entryMD(e)));
+      const del=d.querySelector('[data-a=del]');
+      del.addEventListener('click',()=>{ if(del.dataset.c==='1'){ const i=entries.findIndex(x=>x.id===e.id); entries[i]={id:e.id,ts:e.ts,deleted:true,updatedAt:Date.now()}; meta.dirty=true; persistLocal(); render(); toast('削除しました'); sync(); } else { del.dataset.c='1'; del.textContent='本当に削除？'; setTimeout(()=>{del.dataset.c='0';del.textContent='削除';},2500); } });
+      h.appendChild(d);
+    });
+  }
+
+  // ---------- chart ----------
+  document.querySelectorAll('#rangeTabs button').forEach(b=>b.addEventListener('click',()=>{ document.querySelectorAll('#rangeTabs button').forEach(x=>x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); rangeN=+b.dataset.n; renderChart(); }));
+  const SERIES=[['ton','貪','var(--ton)'],['jin','瞋','var(--jin)'],['chi','痴','var(--chi)']];
+  function renderChart(){
+    const svg=$('chart'), tip=$('tip'); svg.innerHTML=''; tip.style.display='none';
+    const l=live(); const list=rangeN?l.slice(-rangeN):l;
+    const empty=list.length<2; $('chartEmpty').classList.toggle('hidden',!empty); svg.style.display=empty?'none':'block'; if(empty) return;
+    const W=372,H=240,m={t:12,r:12,b:40,l:26}; const iw=W-m.l-m.r, ih=H-m.t-m.b;
+    const x=i=>m.l+i*iw/(list.length-1); const y=v=>m.t+ih-(v/10)*ih;
+    const ns='http://www.w3.org/2000/svg'; const el=(t,a)=>{const n=document.createElementNS(ns,t); for(const k in a) n.setAttribute(k,a[k]); return n;};
+    [0,5,10].forEach(v=>{ svg.appendChild(el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:'var(--grid)','stroke-width':1})); const t=el('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end','font-size':11,fill:'var(--muted)'}); t.textContent=v; svg.appendChild(t); });
+    const step=Math.max(1,Math.ceil(list.length/4));
+    list.forEach((e,i)=>{ if(i%step===0||i===list.length-1){ const d=new Date(e.ts); const t=el('text',{x:x(i),y:H-m.b+18,'text-anchor':'middle','font-size':11,fill:'var(--muted)'}); t.textContent=`${d.getMonth()+1}/${d.getDate()}`; svg.appendChild(t); const t2=el('text',{x:x(i),y:H-m.b+31,'text-anchor':'middle','font-size':10,fill:'var(--muted)'}); t2.textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}`; svg.appendChild(t2);} });
+    SERIES.forEach(([k,,c])=>{
+      const dd=list.map((e,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(e[k].level).toFixed(1)}`).join(' ');
+      svg.appendChild(el('path',{d:dd,fill:'none',stroke:c,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
+      list.forEach((e,i)=>svg.appendChild(el('circle',{cx:x(i),cy:y(e[k].level),r:4,fill:c,stroke:'var(--surface)','stroke-width':2})));
+    });
+    const cross=el('line',{y1:m.t,y2:m.t+ih,stroke:'var(--muted)','stroke-width':1,'stroke-dasharray':'3 3',opacity:0}); svg.appendChild(cross);
+    const hit=el('rect',{x:m.l,y:m.t,width:iw,height:ih,fill:'transparent'}); svg.appendChild(hit);
+    function show(pt){
+      const r=svg.getBoundingClientRect(); const px=(pt.clientX-r.left)*W/r.width; const i=Math.max(0,Math.min(list.length-1,Math.round((px-m.l)/(iw/(list.length-1)))));
+      const e=list[i]; cross.setAttribute('x1',x(i)); cross.setAttribute('x2',x(i)); cross.setAttribute('opacity',1);
+      tip.innerHTML=`<b>${fmt(e.ts)}</b>`+SERIES.map(([k,n,c])=>`<div class="r"><i><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:5px"></span>${n}</i><span>${e[k].level}</span></div>`).join('');
+      tip.style.display='block'; const wrap=svg.parentElement.getBoundingClientRect(); let lx=(pt.clientX-wrap.left)+12; if(lx+160>wrap.width) lx=(pt.clientX-wrap.left)-172; tip.style.left=Math.max(0,lx)+'px'; tip.style.top=Math.max(0,(pt.clientY-wrap.top)-10)+'px';
+    }
+    hit.addEventListener('mousemove',show); hit.addEventListener('touchstart',ev=>show(ev.touches[0]),{passive:true}); hit.addEventListener('touchmove',ev=>show(ev.touches[0]),{passive:true});
+    hit.addEventListener('mouseleave',()=>{tip.style.display='none';cross.setAttribute('opacity',0);});
+    hit.addEventListener('touchend',()=>setTimeout(()=>{tip.style.display='none';cross.setAttribute('opacity',0);},1500),{passive:true});
+  }
+
+  // ---------- init ----------
+  load(); fillCfg(); resetForm(); render();
+  if(configured()) sync(); else setSync('warn','未設定（ローカル保存のみ）');
+})();
+</script>
+</body>
+</html>
