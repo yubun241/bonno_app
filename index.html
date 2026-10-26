@@ -37,7 +37,8 @@
   .sync .st.ok{background:var(--ok)} .sync .st.warn{background:var(--warn)} .sync .st.bad{background:var(--bad)} .sync .st.busy{background:var(--accent);animation:p 1s infinite}
   @keyframes p{50%{opacity:.3}}
   .sync button{padding:5px 10px;font-size:12px}
-  main{padding:0 14px calc(var(--sab) + 92px)}
+  main{padding:0 14px calc(var(--sab) + 92px);max-width:560px;margin:0 auto}
+  .top,.savebar{padding-left:max(14px,calc(50% - 266px));padding-right:max(14px,calc(50% - 266px))}
   section.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin:12px 0}
   section.card h2{font-size:16px;margin:0 0 2px;display:flex;align-items:center;gap:8px}
   section.card h2 .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
@@ -122,8 +123,8 @@
     <label for="tonAttachText">何に執着しているか・その中身</label>
     <textarea id="tonAttachText" placeholder="対象／手放せない理由／失うと何が起きると思っているか"></textarea>
   </div>
-  <label for="tonNote">メモ（任意）</label>
-  <textarea id="tonNote" placeholder="きっかけ、身体感覚、思考のループなど"></textarea>
+  <label for="tonDesire">どんな欲か</label>
+  <textarea id="tonDesire" placeholder="何が欲しい／何を得たい・保ちたい・避けたいか。承認・所有・快楽・安心・優位など、欲の種類と対象"></textarea>
 </section>
 
 <section class="card">
@@ -341,7 +342,7 @@
     return {
       id: editingId||(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
       ts, updatedAt:Date.now(),
-      ton:{level:+$('tonLevel').value, attach:$('tonAttach').checked, attachText:esc($('tonAttachText').value), note:esc($('tonNote').value)},
+      ton:{level:+$('tonLevel').value, attach:$('tonAttach').checked, attachText:esc($('tonAttachText').value), desire:esc($('tonDesire').value)},
       jin:{level:+$('jinLevel').value, anger:esc($('jinAnger').value), sad:esc($('jinSad').value)},
       chi:{level:+$('chiLevel').value, note:esc($('chiNote').value)},
       action:{ji:esc($('apJi').value), hi:esc($('apHi').value), ki:esc($('apKi').value), sha:esc($('apSha').value)},
@@ -352,7 +353,7 @@
     $('ts').value=toLocalInput(e.ts);
     $('tonLevel').value=e.ton.level; $('tonOut').value=e.ton.level;
     $('tonAttach').checked=!!e.ton.attach; $('tonAttachBox').classList.toggle('hidden',!e.ton.attach);
-    $('tonAttachText').value=e.ton.attachText||''; $('tonNote').value=e.ton.note||'';
+    $('tonAttachText').value=e.ton.attachText||''; $('tonDesire').value=e.ton.desire||e.ton.note||'';
     $('jinLevel').value=e.jin.level; $('jinOut').value=e.jin.level; $('jinAnger').value=e.jin.anger||''; $('jinSad').value=e.jin.sad||'';
     $('chiLevel').value=e.chi.level; $('chiOut').value=e.chi.level; $('chiNote').value=e.chi.note||'';
     $('apJi').value=e.action.ji||''; $('apHi').value=e.action.hi||''; $('apKi').value=e.action.ki||''; $('apSha').value=e.action.sha||'';
@@ -384,7 +385,7 @@
     L.push(`### 貪（欲・執着） — ${e.ton.level}/10`);
     L.push(`- 執着: ${e.ton.attach?'あり':'なし'}`);
     if(e.ton.attach&&e.ton.attachText) L.push(`  - 内容: ${e.ton.attachText.replace(/\n/g,'\n    ')}`);
-    if(e.ton.note) L.push(`- メモ: ${ind(e.ton.note)}`);
+    L.push(`- 欲の内容: ${ind(e.ton.desire||e.ton.note)||'（記載なし）'}`);
     L.push('',`### 瞋（怒り・悲しみ） — ${e.jin.level}/10`);
     L.push(`- 怒り: ${ind(e.jin.anger)||'（記載なし）'}`);
     L.push(`- 悲しみ: ${ind(e.jin.sad)||'（記載なし）'}`);
@@ -425,7 +426,7 @@
     if(!l.length){ h.innerHTML='<div class="empty">まだ記録がありません。</div>'; return; }
     [...l].reverse().forEach(e=>{
       const d=document.createElement('div'); d.className='entry';
-      const summary=[e.ton.attach&&e.ton.attachText?`執着: ${e.ton.attachText}`:'', e.ton.note?`貪メモ: ${e.ton.note}`:'', e.jin.anger?`怒り: ${e.jin.anger}`:'', e.jin.sad?`悲しみ: ${e.jin.sad}`:'', e.chi.note?`痴: ${e.chi.note}`:'', e.action.ji?`慈: ${e.action.ji}`:'', e.action.hi?`悲: ${e.action.hi}`:'', e.action.ki?`喜: ${e.action.ki}`:'', e.action.sha?`捨: ${e.action.sha}`:'', e.memo?`ふりかえり: ${e.memo}`:''].filter(Boolean).join('\n')||'（本文なし）';
+      const summary=[e.ton.attach&&e.ton.attachText?`執着: ${e.ton.attachText}`:'', (e.ton.desire||e.ton.note)?`欲: ${e.ton.desire||e.ton.note}`:'', e.jin.anger?`怒り: ${e.jin.anger}`:'', e.jin.sad?`悲しみ: ${e.jin.sad}`:'', e.chi.note?`痴: ${e.chi.note}`:'', e.action.ji?`慈: ${e.action.ji}`:'', e.action.hi?`悲: ${e.action.hi}`:'', e.action.ki?`喜: ${e.action.ki}`:'', e.action.sha?`捨: ${e.action.sha}`:'', e.memo?`ふりかえり: ${e.memo}`:''].filter(Boolean).join('\n')||'（本文なし）';
       d.innerHTML=`<div class="head"><span class="d">${fmt(e.ts)}</span><span class="lv"><span style="--c:var(--ton)">${e.ton.level}</span><span style="--c:var(--jin)">${e.jin.level}</span><span style="--c:var(--chi)">${e.chi.level}</span></span></div>
         <div class="body"></div>
         <div class="actions"><button type="button" class="sm" data-a="edit">編集</button><button type="button" class="sm" data-a="md">MDコピー</button><button type="button" class="sm danger" data-a="del">削除</button></div>`;

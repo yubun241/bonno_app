@@ -60,7 +60,7 @@ GitHub → Settings → Developer settings → Personal access tokens → **Fine
     "id": "m2x3k9ab1c",
     "ts": 1761444000000,
     "updatedAt": 1761444100000,
-    "ton": { "level": 6, "attach": true, "attachText": "...", "note": "..." },
+    "ton": { "level": 6, "attach": true, "attachText": "...", "desire": "..." },
     "jin": { "level": 3, "anger": "...", "sad": "..." },
     "chi": { "level": 4, "note": "..." },
     "action": { "ji": "...", "hi": "...", "ki": "...", "sha": "..." },
